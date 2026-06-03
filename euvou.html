@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meia Maratona - Varjota</title>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2d5a27; --bg: #f8fafc; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .container { background: #ffffff; padding: 25px; border-radius: 30px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); max-width: 400px; width: 100%; }
+        h1 { font-size: 14px; text-align: center; color: var(--primary); letter-spacing: 2px; margin-bottom: 20px; text-transform: uppercase; }
+        .preview-box { width: 100%; aspect-ratio: 9/16; background: #e2e8f0; border-radius: 20px; overflow: hidden; border: 1px solid #cbd5e1; }
+        canvas { width: 100%; height: 100%; display: block; }
+        .controls { margin-top: 20px; background: #f1f5f9; padding: 20px; border-radius: 20px; }
+        label { font-size: 10px; font-weight: 900; color: #64748b; text-transform: uppercase; display: block; margin: 10px 0 5px; }
+        input[type="text"] { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 12px; font-family: 'Montserrat'; font-weight: 700; box-sizing: border-box; margin-bottom: 5px; }
+        input[type="range"] { width: 100%; height: 6px; accent-color: var(--primary); margin-bottom: 10px; }
+        .btn { width: 100%; padding: 18px; border-radius: 15px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
+        .btn-upload { background: #0f172a; color: white; margin-bottom: 15px; }
+        .btn-download { background: var(--primary); color: white; margin-top: 20px; }
+        .row { display: flex; gap: 10px; }
+        .row div { flex: 1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>MEIA MAROTONA - VARJOTA/CE</h1>
+    <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">1. Escolher Foto</button>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+
+    <div class="preview-box">
+        <canvas id="mainCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <label>Nome do Atleta</label>
+        <input type="text" id="nomeAtleta" placeholder="EX: MARCOS RENAN">
+        <label>Equipe</label>
+        <input type="text" id="equipeAtleta" placeholder="EX: CROATARUN">
+        
+        <label>Zoom da Foto</label>
+        <input type="range" id="zoom" min="0.1" max="3" step="0.01" value="1.0">
+        
+        <div class="row">
+            <div>
+                <label>Posição X (Horizontal)</label>
+                <input type="range" id="posX" min="-500" max="500" value="0">
+            </div>
+            <div>
+                <label>Posição Y (Vertical)</label>
+                <input type="range" id="posY" min="-600" max="600" value="0">
+            </div>
+        </div>
+    </div>
+
+    <button class="btn btn-download" id="btnDownload">2. Baixar Story</button>
+</div>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const imgMoldura = new Image();
+    const imgAtleta = new Image();
+
+    const W = 1080, H = 1920;
+    const area = { x: 124, y: 231, w: 832, h: 1046, r: 105 };
+    const qualityScale = 3; 
+
+    imgMoldura.src = 'euvou.png'; 
+    imgMoldura.onload = () => {
+        canvas.width = W * qualityScale;
+        canvas.height = H * qualityScale;
+        ctx.scale(qualityScale, qualityScale);
+        render();
+    };
+
+    document.getElementById('fileInput').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (f) => {
+                imgAtleta.src = f.target.result;
+                imgAtleta.onload = render;
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    document.querySelectorAll('input').forEach(input => input.oninput = render);
+
+    function render() {
+        ctx.clearRect(0, 0, W, H);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // 1. MOLDURA
+        ctx.drawImage(imgMoldura, 0, 0, W, H);
+
+        // 2. FOTO DO ATLETA COM AJUSTES X E Y
+        if (imgAtleta.src) {
+            ctx.save();
+            drawRoundedRect(ctx, area.x, area.y, area.w, area.h, area.r);
+            ctx.clip();
+            
+            const z = parseFloat(document.getElementById('zoom').value);
+            const px = parseInt(document.getElementById('posX').value);
+            const py = parseInt(document.getElementById('posY').value);
+            
+            const aspect = imgAtleta.width / imgAtleta.height;
+            let drawW = area.w * z;
+            let drawH = (area.w / aspect) * z;
+            
+            // Centralização baseada nos novos inputs X e Y
+            ctx.drawImage(imgAtleta, 
+                area.x + (area.w - drawW) / 2 + px, 
+                area.y + (area.h - drawH) / 2 + py, 
+                drawW, drawH
+            );
+            ctx.restore();
+        }
+
+        // 3. ARTE "EU VOU" (TARJA VERDE PREMIUM)
+        renderEuVouImpacto();
+
+        // 4. TEXTOS (NOME E EQUIPE)
+        renderTextos();
+    }
+
+    function renderEuVouImpacto() {
+        const x = W / 2;
+        const y = 1175;
+        const txt = "EU VOU";
+
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.translate(x, y);
+        ctx.rotate(-0.04);
+
+        // TARJA VERDE ESCURO (Identidade Saraletii)
+        ctx.fillStyle = "rgba(26, 58, 22, 0.95)"; 
+        ctx.shadowColor = "rgba(0,0,0,0.3)";
+        ctx.shadowBlur = 15;
+        ctx.fillRect(-380, -110, 760, 165);
+
+        // TEXTO BRANCO
+        ctx.font = "italic 195px 'Permanent Marker'";
+        ctx.shadowBlur = 0; 
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(txt, 0, 10);
+
+        ctx.restore();
+    }
+
+    function renderTextos() {
+        const nome = document.getElementById('nomeAtleta').value.toUpperCase().trim();
+        const equipe = document.getElementById('equipeAtleta').value.toUpperCase().trim();
+
+        ctx.textAlign = 'center';
+        if (nome) {
+            ctx.font = "900 85px 'Montserrat'";
+            ctx.fillStyle = "#1a3a16";
+            ctx.fillText(nome, W / 2, 1365);
+        }
+        if (equipe) {
+            ctx.font = "700 44px 'Montserrat'";
+            ctx.fillStyle = "#475569";
+            ctx.fillText(equipe, W / 2, 1425);
+        }
+    }
+
+    function drawRoundedRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
+    document.getElementById('btnDownload').onclick = () => {
+        if (!imgAtleta.src) return alert("Selecione sua foto primeiro!");
+        const link = document.createElement('a');
+        link.download = 'Saraletii_Run_Story.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+    };
+</script>
+
+</body>
+</html>
