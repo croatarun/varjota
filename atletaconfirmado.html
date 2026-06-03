@@ -46,11 +46,11 @@
         <div class="row">
             <div>
                 <label>Posição X (Horizontal)</label>
-                <input type="range" id="posX" min="-1000" max="1000" value="0">
+                <input type="range" id="posX" min="-1500" max="1500" value="0">
             </div>
             <div>
                 <label>Posição Y (Vertical)</label>
-                <input type="range" id="posY" min="-1200" max="1200" value="0">
+                <input type="range" id="posY" min="-1500" max="1500" value="0">
             </div>
         </div>
     </div>
@@ -65,10 +65,11 @@
     const imgAtleta = new Image();
 
     const W = 1080, H = 1920;
-    const area = { x: 124, y: 231, w: 832, h: 1046, r: 105 };
+    
+    // ALTERADO: Agora a área da foto ocupa os 1080x1920 totais do Canvas (Tela Cheia)
+    const area = { x: 0, y: 0, w: 1080, h: 1920 };
     const qualityScale = 3; 
 
-    // Configuração de segurança para evitar problemas de CORS
     imgMoldura.crossOrigin = "anonymous";
     imgMoldura.src = 'euvou.png'; 
     
@@ -91,7 +92,6 @@
         }
     };
 
-    // Escuta mudanças em todos os inputs para atualizar o canvas em tempo real
     document.querySelectorAll('input').forEach(input => input.oninput = render);
 
     function render() {
@@ -99,10 +99,13 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // 1. FOTO DO ATLETA (Desenhar primeiro para ficar ATRÁS da moldura)
+        // 1. FOTO DO ATLETA (Ocupando a tela inteira ao fundo)
         if (imgAtleta.src && imgAtleta.complete) {
             ctx.save();
-            drawRoundedRect(ctx, area.x, area.y, area.w, area.h, area.r);
+            
+            // Criando o recorte quadrado da tela inteira
+            ctx.beginPath();
+            ctx.rect(area.x, area.y, area.w, area.h);
             ctx.clip();
             
             const z = parseFloat(document.getElementById('zoom').value);
@@ -121,7 +124,7 @@
             ctx.restore();
         }
 
-        // 2. MOLDURA (Vem por cima, cobrindo as bordas da foto)
+        // 2. MOLDURA (Vem por cima de tudo)
         if (imgMoldura.complete) {
             ctx.drawImage(imgMoldura, 0, 0, W, H);
         }
@@ -147,20 +150,6 @@
         }
     }
 
-    function drawRoundedRect(ctx, x, y, width, height, radius) {
-        ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + width - radius, y);
-        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-        ctx.lineTo(x + width, y + height - radius);
-        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-        ctx.lineTo(x + radius, y + height);
-        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
-        ctx.closePath();
-    }
-
     document.getElementById('btnDownload').onclick = () => {
         if (!imgAtleta.src) return alert("Selecione sua foto primeiro!");
         try {
@@ -170,7 +159,7 @@
             link.click();
         } catch (err) {
             console.error(err);
-            alert("Erro ao baixar. Para testar localmente, utilize um servidor local (como a extensão Live Server do VS Code).");
+            alert("Erro ao baixar. Certifique-se de testar usando um servidor local.");
         }
     };
 </script>
