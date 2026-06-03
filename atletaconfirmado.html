@@ -26,7 +26,7 @@
 <body>
 
 <div class="container">
-    <h1>MEIA MAROTONA - VARJOTA/CE</h1>
+    <h1>MEIA MARATONA - VARJOTA/CE</h1>
     <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">1. Escolher Foto</button>
     <input type="file" id="fileInput" accept="image/*" style="display:none">
 
@@ -68,7 +68,10 @@
     const area = { x: 124, y: 231, w: 832, h: 1046, r: 105 };
     const qualityScale = 3; 
 
+    // Configuração de segurança para evitar problemas de CORS
+    imgMoldura.crossOrigin = "anonymous";
     imgMoldura.src = 'euvou.png'; 
+    
     imgMoldura.onload = () => {
         canvas.width = W * qualityScale;
         canvas.height = H * qualityScale;
@@ -88,6 +91,7 @@
         }
     };
 
+    // Escuta mudanças em todos os inputs para atualizar o canvas em tempo real
     document.querySelectorAll('input').forEach(input => input.oninput = render);
 
     function render() {
@@ -95,11 +99,8 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // 1. MOLDURA
-        ctx.drawImage(imgMoldura, 0, 0, W, H);
-
-        // 2. FOTO DO ATLETA COM AJUSTES X E Y
-        if (imgAtleta.src) {
+        // 1. FOTO DO ATLETA (Desenhar primeiro para ficar ATRÁS da moldura)
+        if (imgAtleta.src && imgAtleta.complete) {
             ctx.save();
             drawRoundedRect(ctx, area.x, area.y, area.w, area.h, area.r);
             ctx.clip();
@@ -112,13 +113,17 @@
             let drawW = area.w * z;
             let drawH = (area.w / aspect) * z;
             
-            // Centralização baseada nos novos inputs X e Y
             ctx.drawImage(imgAtleta, 
                 area.x + (area.w - drawW) / 2 + px, 
                 area.y + (area.h - drawH) / 2 + py, 
                 drawW, drawH
             );
             ctx.restore();
+        }
+
+        // 2. MOLDURA (Vem por cima, cobrindo imperfeições da foto)
+        if (imgMoldura.complete) {
+            ctx.drawImage(imgMoldura, 0, 0, W, H);
         }
 
         // 3. ARTE "EU VOU" (TARJA VERDE PREMIUM)
@@ -138,7 +143,7 @@
         ctx.translate(x, y);
         ctx.rotate(-0.04);
 
-        // TARJA VERDE ESCURO (Identidade Saraletii)
+        // TARJA VERDE ESCURO
         ctx.fillStyle = "rgba(26, 58, 22, 0.95)"; 
         ctx.shadowColor = "rgba(0,0,0,0.3)";
         ctx.shadowBlur = 15;
@@ -186,10 +191,15 @@
 
     document.getElementById('btnDownload').onclick = () => {
         if (!imgAtleta.src) return alert("Selecione sua foto primeiro!");
-        const link = document.createElement('a');
-        link.download = 'Saraletii_Run_Story.png';
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
+        try {
+            const link = document.createElement('a');
+            link.download = 'Saraletii_Run_Story.png';
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao baixar. Para testar localmente, utilize um servidor local (como a extensão Live Server do VS Code).");
+        }
     };
 </script>
 
