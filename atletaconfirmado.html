@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meia Maratona - Varjota</title>
-    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #2d5a27; --bg: #f8fafc; }
         body { font-family: 'Montserrat', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
@@ -41,16 +41,16 @@
         <input type="text" id="equipeAtleta" placeholder="EX: CROATARUN">
         
         <label>Zoom da Foto</label>
-        <input type="range" id="zoom" min="0.1" max="3" step="0.01" value="1.0">
+        <input type="range" id="zoom" min="0.1" max="5" step="0.01" value="1.0">
         
         <div class="row">
             <div>
                 <label>Posição X (Horizontal)</label>
-                <input type="range" id="posX" min="-500" max="500" value="0">
+                <input type="range" id="posX" min="-1000" max="1000" value="0">
             </div>
             <div>
                 <label>Posição Y (Vertical)</label>
-                <input type="range" id="posY" min="-600" max="600" value="0">
+                <input type="range" id="posY" min="-1200" max="1200" value="0">
             </div>
         </div>
     </div>
@@ -121,41 +121,13 @@
             ctx.restore();
         }
 
-        // 2. MOLDURA (Vem por cima, cobrindo imperfeições da foto)
+        // 2. MOLDURA (Vem por cima, cobrindo as bordas da foto)
         if (imgMoldura.complete) {
             ctx.drawImage(imgMoldura, 0, 0, W, H);
         }
 
-        // 3. ARTE "EU VOU" (TARJA VERDE PREMIUM)
-        renderEuVouImpacto();
-
-        // 4. TEXTOS (NOME E EQUIPE)
+        // 3. TEXTOS (NOME E EQUIPE)
         renderTextos();
-    }
-
-    function renderEuVouImpacto() {
-        const x = W / 2;
-        const y = 1175;
-        const txt = "EU VOU";
-
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.translate(x, y);
-        ctx.rotate(-0.04);
-
-        // TARJA VERDE ESCURO
-        ctx.fillStyle = "rgba(26, 58, 22, 0.95)"; 
-        ctx.shadowColor = "rgba(0,0,0,0.3)";
-        ctx.shadowBlur = 15;
-        ctx.fillRect(-380, -110, 760, 165);
-
-        // TEXTO BRANCO
-        ctx.font = "italic 195px 'Permanent Marker'";
-        ctx.shadowBlur = 0; 
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(txt, 0, 10);
-
-        ctx.restore();
     }
 
     function renderTextos() {
