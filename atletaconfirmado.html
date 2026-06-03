@@ -65,8 +65,6 @@
     const imgAtleta = new Image();
 
     const W = 1080, H = 1920;
-    
-    // ALTERADO: Agora a área da foto ocupa os 1080x1920 totais do Canvas (Tela Cheia)
     const area = { x: 0, y: 0, w: 1080, h: 1920 };
     const qualityScale = 3; 
 
@@ -99,11 +97,9 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
 
-        // 1. FOTO DO ATLETA (Ocupando a tela inteira ao fundo)
+        // 1. FOTO DO ATLETA
         if (imgAtleta.src && imgAtleta.complete) {
             ctx.save();
-            
-            // Criando o recorte quadrado da tela inteira
             ctx.beginPath();
             ctx.rect(area.x, area.y, area.w, area.h);
             ctx.clip();
@@ -124,7 +120,7 @@
             ctx.restore();
         }
 
-        // 2. MOLDURA (Vem por cima de tudo)
+        // 2. MOLDURA
         if (imgMoldura.complete) {
             ctx.drawImage(imgMoldura, 0, 0, W, H);
         }
@@ -133,20 +129,40 @@
         renderTextos();
     }
 
+    // ==========================================
+    // FUNÇÃO DE AJUSTE DOS TEXTOS
+    // ==========================================
     function renderTextos() {
         const nome = document.getElementById('nomeAtleta').value.toUpperCase().trim();
         const equipe = document.getElementById('equipeAtleta').value.toUpperCase().trim();
 
+        // Alinhamento centralizado para ambos os textos
         ctx.textAlign = 'center';
+
+        // --- CONFIGURAÇÃO DO NOME DO ATLETA ---
         if (nome) {
+            // Modifique o '900' para a espessura e '85px' para o tamanho da letra do nome
             ctx.font = "900 85px 'Montserrat'";
+            
+            // Altere a cor do nome substituindo o código Hexadecimal abaixo
             ctx.fillStyle = "#1a3a16";
-            ctx.fillText(nome, W / 2, 1365);
+            
+            // O primeiro número é a posição Horizontal (W / 2 centraliza perfeitamente)
+            // O segundo número (1600) controla a altura. Aumente para descer mais ou diminua para subir.
+            ctx.fillText(nome, W / 2, 1600);
         }
+
+        // --- CONFIGURAÇÃO DA EQUIPE ---
         if (equipe) {
+            // Modifique o '700' para a espessura e '44px' para o tamanho da letra da equipe
             ctx.font = "700 44px 'Montserrat'";
+            
+            // Altere a cor da equipe substituindo o código Hexadecimal abaixo
             ctx.fillStyle = "#475569";
-            ctx.fillText(equipe, W / 2, 1425);
+            
+            // O primeiro número é a posição Horizontal (W / 2 centraliza perfeitamente)
+            // O segundo número (1670) controla a altura. Garanta que seja maior que o do nome para ficar abaixo dele.
+            ctx.fillText(equipe, W / 2, 1670);
         }
     }
 
@@ -154,7 +170,7 @@
         if (!imgAtleta.src) return alert("Selecione sua foto primeiro!");
         try {
             const link = document.createElement('a');
-            link.download = 'Saraletii_Run_Story.png';
+            link.download = 'Varjota_Edicao_Santana.png';
             link.href = canvas.toDataURL('image/png', 1.0);
             link.click();
         } catch (err) {
